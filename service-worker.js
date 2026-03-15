@@ -1,5 +1,6 @@
 // VERSION: Update this when you make changes to force cache refresh
-const CACHE_VERSION = 'v1.0.0';
+// IMPORTANT: Increment this version number whenever you update any files
+const CACHE_VERSION = 'v1.1.0';
 const CACHE_NAME = `akademik-hesablayici-${CACHE_VERSION}`;
 
 const ASSETS_TO_CACHE = [
@@ -9,12 +10,13 @@ const ASSETS_TO_CACHE = [
   '/app.js',
   '/manifest.json',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/abify-logo.png'
 ];
 
 // Install event - cache all assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[SW] Installing version:', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -28,12 +30,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - delete old caches
+// Activate event - delete old caches IMMEDIATELY
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating version:', CACHE_VERSION);
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
+        // Delete ALL old caches immediately
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
@@ -44,34 +47,61 @@ self.addEventListener('activate', (event) => {
         );
       })
       .then(() => {
-        console.log('[SW] Service worker activated');
+        console.log('[SW] Old caches deleted, version active:', CACHE_VERSION);
         return self.clients.claim(); // Take control immediately
       })
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Cache-First strategy for better offline support
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          console.log('[SW] Serving from cache:', event.request.url);
-          return response;
+      .then((cachedResponse) => {
+        // Return cached version if available
+        if (cachedResponse) {
+          // Update cache in background for next time
+          fetch(event.request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                caches.open(CACHE_NAME)
+                  .then((cache) => {
+                    cache.put(event.request, networkResponse.clone());
+                  });
+              }
+            })
+            .catch(() => {}); // Ignore network errors
+          
+          return cachedResponse;
         }
-        console.log('[SW] Fetching from network:', event.request.url);
+        
+        // Not in cache, fetch from network
         return fetch(event.request)
-          .then((response) => {
-            // Cache new responses
-            if (response && response.status === 200 && response.type === 'basic') {
-              const responseToCache = response.clone();
+          .then((networkResponse) => {
+            // Cache successful responses
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              const responseToCache = networkResponse.clone();
               caches.open(CACHE_NAME)
                 .then((cache) => {
                   cache.put(event.request, responseToCache);
                 });
             }
-            return response;
+            return networkResponse;
+          })
+          .catch(() => {
+            // Network failed and not in cache
+            // Return offline page if available
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
           });
       })
   );
+});
+
+// Listen for skip waiting message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });

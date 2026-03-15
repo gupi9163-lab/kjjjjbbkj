@@ -25,6 +25,7 @@ body {
     color: var(--text-dark);
     line-height: 1.6;
     padding-top: 60px; /* Banner üçün yer */
+    padding-bottom: 80px; /* Install button üçün yer */
 }
 
 /* Banner */
@@ -98,6 +99,27 @@ body {
 }
 
 /* Typography */
+.logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.app-logo {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
 .main-title {
     font-size: 32px;
     font-weight: 700;
@@ -231,6 +253,101 @@ body {
 
 .install-btn:hover {
     background: var(--primary-dark);
+}
+
+/* Fixed Install Button (Bottom) */
+.install-btn-fixed {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    animation: bounceIn 0.5s ease-out;
+}
+
+.install-btn-fixed:hover {
+    background: var(--primary-dark);
+    transform: translateX(-50%) scale(1.05);
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    100% {
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* iOS Install Hint */
+.ios-install-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--white);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow-lg);
+    z-index: 999;
+    max-width: 90%;
+    animation: slideUp 0.5s ease-out;
+}
+
+.ios-hint-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text-dark);
+    flex-wrap: wrap;
+}
+
+.close-ios-hint {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 /* Forms */
@@ -471,6 +588,7 @@ input[type="number"]:focus, input[type="date"]:focus {
 @media (max-width: 480px) {
     body {
         padding-top: 50px;
+        padding-bottom: 80px;
     }
 
     .banner {
@@ -489,5 +607,22 @@ input[type="number"]:focus, input[type="date"]:focus {
     .whatsapp-btn svg {
         width: 20px;
         height: 20px;
+    }
+    
+    .app-logo {
+        width: 90px;
+        height: 90px;
+    }
+    
+    .install-btn-fixed {
+        bottom: 15px;
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    
+    .ios-install-hint {
+        bottom: 15px;
+        padding: 10px 12px;
+        font-size: 12px;
     }
 }

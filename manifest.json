@@ -7,6 +7,8 @@
   "background_color": "#ffffff",
   "theme_color": "#4F46E5",
   "orientation": "portrait",
+  "prefer_related_applications": false,
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -19,6 +21,24 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Buraxılış Bal",
+      "short_name": "Buraxılış",
+      "description": "Buraxılış bal hesablama",
+      "url": "/?page=buraxilis",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Blok Bal",
+      "short_name": "Blok",
+      "description": "Blok bal hesablama",
+      "url": "/?page=blok",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

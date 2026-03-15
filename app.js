@@ -1,5 +1,5 @@
 // ========================================
-// PWA SERVICE WORKER REGISTRATION
+// PWA SERVICE WORKER REGISTRATION & AUTO UPDATE
 // ========================================
 
 if ('serviceWorker' in navigator) {
@@ -7,25 +7,76 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
                 console.log('Service Worker registered:', registration);
+                
+                // Check for updates every 10 seconds
+                setInterval(() => {
+                    registration.update();
+                }, 10000);
+                
+                // Listen for updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New service worker installed, force refresh
+                            console.log('New version available! Updating...');
+                            newWorker.postMessage({ action: 'skipWaiting' });
+                        }
+                    });
+                });
             })
             .catch(error => {
                 console.log('Service Worker registration failed:', error);
             });
+        
+        // Reload page when new service worker takes control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
     });
 }
 
 // ========================================
-// PWA INSTALL PROMPT
+// PWA INSTALL PROMPT (FIXED BOTTOM)
 // ========================================
 
 let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
+const iosInstallHint = document.getElementById('iosInstallHint');
 
+// Check if iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+
+// Show iOS install hint if iOS and not installed
+if (isIOS && !isInStandaloneMode && iosInstallHint) {
+    iosInstallHint.style.display = 'flex';
+    
+    // Hide hint when user clicks close
+    const closeBtn = iosInstallHint.querySelector('.close-ios-hint');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            iosInstallHint.style.display = 'none';
+            localStorage.setItem('iosHintDismissed', 'true');
+        });
+    }
+    
+    // Check if previously dismissed
+    if (localStorage.getItem('iosHintDismissed')) {
+        iosInstallHint.style.display = 'none';
+    }
+}
+
+// Handle Android/Chrome install prompt
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     if (installBtn) {
-        installBtn.style.display = 'block';
+        installBtn.style.display = 'flex';
     }
 });
 
@@ -35,24 +86,58 @@ if (installBtn) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             console.log(`User response: ${outcome}`);
-            deferredPrompt = null;
-            installBtn.style.display = 'none';
+            if (outcome === 'accepted') {
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            }
         }
     });
 }
 
+// Hide install button if already installed
+window.addEventListener('appinstalled', () => {
+    console.log('PWA installed');
+    if (installBtn) {
+        installBtn.style.display = 'none';
+    }
+    if (iosInstallHint) {
+        iosInstallHint.style.display = 'none';
+    }
+});
+
 // ========================================
-// NAVIGATION SYSTEM
+// NAVIGATION SYSTEM WITH SCROLL POSITION
 // ========================================
 
-function navigateTo(pageId) {
+const scrollPositions = {};
+let navigationHistory = [];
+
+function navigateTo(pageId, saveScroll = true) {
+    // Save current scroll position
+    if (saveScroll) {
+        const currentPage = document.querySelector('.page.active');
+        if (currentPage) {
+            scrollPositions[currentPage.id] = window.scrollY;
+        }
+    }
+    
+    // Hide all pages
     const pages = document.querySelectorAll('.page');
     pages.forEach(page => page.classList.remove('active'));
     
+    // Show target page
     const targetPage = document.getElementById(pageId);
     if (targetPage) {
         targetPage.classList.add('active');
-        window.scrollTo(0, 0);
+        
+        // Restore scroll position if exists, otherwise scroll to top
+        if (saveScroll && scrollPositions[pageId] !== undefined) {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPositions[pageId]);
+            }, 0);
+        } else if (!saveScroll) {
+            window.scrollTo(0, 0);
+        }
     }
 }
 
@@ -61,9 +146,11 @@ function navigateTo(pageId) {
 // ========================================
 
 let selectedBuraxilisSinif = null;
+let buraxilisState = 'select'; // 'select', 'form'
 
 function selectBuraxilisSinif(sinif) {
     selectedBuraxilisSinif = sinif;
+    buraxilisState = 'form';
     document.getElementById('buraxilisSelect').style.display = 'none';
     document.getElementById('buraxilisForm').style.display = 'block';
     document.getElementById('buraxilisResult').style.display = 'none';
@@ -76,6 +163,8 @@ function selectBuraxilisSinif(sinif) {
     document.getElementById('riyaz_etrafli').value = '';
     document.getElementById('xarici_qapali').value = '';
     document.getElementById('xarici_aciq').value = '';
+    
+    // Don't scroll to top
 }
 
 function hesablaBuraxilis() {
@@ -175,6 +264,14 @@ function displayBuraxilisResult(azDiliBal, riyazBal, xariciBal, totalBal) {
     resultDiv.style.display = 'block';
 }
 
+function resetBuraxilis() {
+    buraxilisState = 'select';
+    document.getElementById('buraxilisSelect').style.display = 'block';
+    document.getElementById('buraxilisForm').style.display = 'none';
+    document.getElementById('buraxilisResult').style.display = 'none';
+    selectedBuraxilisSinif = null;
+}
+
 // ========================================
 // BLOK BAL HESABLAMA
 // ========================================
@@ -182,6 +279,7 @@ function displayBuraxilisResult(azDiliBal, riyazBal, xariciBal, totalBal) {
 let selectedBlokQrup = null;
 let selectedAltQrup = null;
 let blokFenler = [];
+let blokState = 'qrupSelect'; // 'qrupSelect', 'altQrupSelect', 'form'
 
 const blokData = {
     1: {
@@ -216,6 +314,7 @@ function selectBlokQrup(qrup) {
     
     if (qrupData.altQrup) {
         // Show alt qrup selection
+        blokState = 'altQrupSelect';
         const altQrupButtons = document.getElementById('altQrupButtons');
         altQrupButtons.innerHTML = '';
         
@@ -230,6 +329,7 @@ function selectBlokQrup(qrup) {
         document.getElementById('blokAltQrupSelect').style.display = 'block';
     } else {
         // No alt qrup, directly show form
+        blokState = 'form';
         blokFenler = qrupData.fenler;
         showBlokForm();
     }
@@ -237,6 +337,7 @@ function selectBlokQrup(qrup) {
 
 function selectAltQrup(altQrup) {
     selectedAltQrup = altQrup;
+    blokState = 'form';
     blokFenler = blokData[selectedBlokQrup].altQrup[altQrup].fenler;
     document.getElementById('blokAltQrupSelect').style.display = 'none';
     showBlokForm();
@@ -370,6 +471,34 @@ function displayBlokResult(results, totalBal) {
     resultDiv.style.display = 'block';
 }
 
+function resetBlok() {
+    // Go back based on current state
+    if (blokState === 'form') {
+        // If in form, go back to alt qrup select (if exists) or qrup select
+        if (selectedAltQrup !== null) {
+            // Has alt qrup, go back to alt qrup select
+            blokState = 'altQrupSelect';
+            document.getElementById('blokForm').style.display = 'none';
+            document.getElementById('blokAltQrupSelect').style.display = 'block';
+            selectedAltQrup = null;
+            blokFenler = [];
+        } else {
+            // No alt qrup, go back to qrup select
+            blokState = 'qrupSelect';
+            document.getElementById('blokForm').style.display = 'none';
+            document.getElementById('blokQrupSelect').style.display = 'block';
+            selectedBlokQrup = null;
+            blokFenler = [];
+        }
+    } else if (blokState === 'altQrupSelect') {
+        // If in alt qrup select, go back to qrup select
+        blokState = 'qrupSelect';
+        document.getElementById('blokAltQrupSelect').style.display = 'none';
+        document.getElementById('blokQrupSelect').style.display = 'block';
+        selectedBlokQrup = null;
+    }
+}
+
 // ========================================
 // YAŞ HESABLAYICI
 // ========================================
@@ -448,29 +577,42 @@ function displayYasResult(years, months, days, totalDays, daysToNextBirthday) {
 }
 
 // ========================================
-// RESET NAVIGATION WHEN GOING BACK HOME
+// CUSTOM BACK BUTTON HANDLERS
 // ========================================
 
-// Reset buraxilis page
-const buraxilisBackBtn = document.querySelector('#buraxilisPage .back-btn');
-if (buraxilisBackBtn) {
-    buraxilisBackBtn.addEventListener('click', () => {
-        document.getElementById('buraxilisSelect').style.display = 'block';
-        document.getElementById('buraxilisForm').style.display = 'none';
-        document.getElementById('buraxilisResult').style.display = 'none';
-        selectedBuraxilisSinif = null;
-    });
-}
+document.addEventListener('DOMContentLoaded', () => {
+    // Buraxilis back button
+    const buraxilisBackBtn = document.querySelector('#buraxilisPage .back-btn');
+    if (buraxilisBackBtn) {
+        buraxilisBackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (buraxilisState === 'form') {
+                resetBuraxilis();
+            } else {
+                navigateTo('homePage');
+            }
+        });
+    }
 
-// Reset blok page
-const blokBackBtn = document.querySelector('#blokPage .back-btn');
-if (blokBackBtn) {
-    blokBackBtn.addEventListener('click', () => {
-        document.getElementById('blokQrupSelect').style.display = 'block';
-        document.getElementById('blokAltQrupSelect').style.display = 'none';
-        document.getElementById('blokForm').style.display = 'none';
-        selectedBlokQrup = null;
-        selectedAltQrup = null;
-        blokFenler = [];
+    // Blok back button
+    const blokBackBtn = document.querySelector('#blokPage .back-btn');
+    if (blokBackBtn) {
+        blokBackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (blokState !== 'qrupSelect') {
+                resetBlok();
+            } else {
+                navigateTo('homePage');
+            }
+        });
+    }
+    
+    // Other page back buttons
+    const otherBackBtns = document.querySelectorAll('.back-btn:not(#buraxilisPage .back-btn):not(#blokPage .back-btn)');
+    otherBackBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateTo('homePage');
+        });
     });
-}
+});
