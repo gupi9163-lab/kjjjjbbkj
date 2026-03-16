@@ -109,31 +109,29 @@ window.addEventListener('appinstalled', () => {
 // NAVIGATION SYSTEM WITH SCROLL POSITION
 // ========================================
 
-const scrollPositions = {};
+let lastScrollPosition = 0;
 
-function navigateTo(pageId) {
-
-    const currentPage = document.querySelector('.page.active');
-
-    // Cari səhifənin scrollunu yadda saxla
-    if (currentPage) {
-        scrollPositions[currentPage.id] = window.scrollY;
-        currentPage.classList.remove('active');
-    }
-
-    const targetPage = document.getElementById(pageId);
-
-    if (targetPage) {
-        targetPage.classList.add('active');
-
-        // Əgər əvvəl scroll varsa ora qayıt
+function showPage(pageId) {
+    const pages = document.querySelectorAll('.page');
+    
+    // Ana səhifəyə qayıdarkən scroll pozisiyasını saxla
+    if (pageId === 'home-page') {
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        
+        // Saxlanmış pozisiyaya qayıt
         setTimeout(() => {
-            const savedScroll = scrollPositions[pageId] || 0;
-            window.scrollTo(0, savedScroll);
+            window.scrollTo(0, lastScrollPosition);
         }, 10);
+    } else {
+        // Digər səhifələrə keçərkən cari pozisiyanı saxla
+        lastScrollPosition = window.scrollY || window.pageYOffset;
+        
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        window.scrollTo(0, 0);
     }
 }
-
 // ========================================
 // BURAXILIŞ BAL HESABLAMA
 // ========================================
