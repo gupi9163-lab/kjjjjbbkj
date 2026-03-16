@@ -112,24 +112,23 @@ window.addEventListener('appinstalled', () => {
 const scrollPositions = {};
 
 function showPage(pageId) {
+
     const pages = document.querySelectorAll('.page');
     const currentPage = document.querySelector('.page.active');
 
-    // Cari səhifənin scrollunu yadda saxla
+    // cari səhifənin scrollunu saxla
     if (currentPage) {
-        scrollPositions[currentPage.id] = window.scrollY || window.pageYOffset;
+        scrollPositions[currentPage.id] = currentPage.scrollTop;
         currentPage.classList.remove('active');
     }
 
-    // Yeni səhifəni göstər
     const targetPage = document.getElementById(pageId);
+
     if (targetPage) {
         targetPage.classList.add('active');
 
-        // Əgər əvvəl scroll mövqeyi varsa ora qayıt
         setTimeout(() => {
-            const savedScroll = scrollPositions[pageId] || 0;
-            window.scrollTo(0, savedScroll);
+            targetPage.scrollTop = scrollPositions[pageId] || 0;
         }, 10);
     }
 }
