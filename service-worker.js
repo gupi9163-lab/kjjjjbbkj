@@ -1,6 +1,6 @@
 // VERSION: Update this when you make changes to force cache refresh
 // IMPORTANT: Increment this version number whenever you update any files
-const CACHE_VERSION = 'v2.1.1';
+const CACHE_VERSION = 'v2.1.2';
 const CACHE_NAME = `akademik-hesablayici-${CACHE_VERSION}`;
 
 const ASSETS_TO_CACHE = [
