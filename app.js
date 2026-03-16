@@ -111,32 +111,26 @@ window.addEventListener('appinstalled', () => {
 
 const scrollPositions = {};
 
-function navigateTo(pageId, saveScroll = true) {
-    // Save current scroll position
-    if (saveScroll) {
-        const currentPage = document.querySelector('.page.active');
-        if (currentPage) {
-            scrollPositions[currentPage.id] = window.scrollY;
-        }
+function navigateTo(pageId) {
+
+    const currentPage = document.querySelector('.page.active');
+
+    // Cari səhifənin scrollunu yadda saxla
+    if (currentPage) {
+        scrollPositions[currentPage.id] = window.scrollY;
+        currentPage.classList.remove('active');
     }
-    
-    // Hide all pages
-    const pages = document.querySelectorAll('.page');
-    pages.forEach(page => page.classList.remove('active'));
-    
-    // Show target page
+
     const targetPage = document.getElementById(pageId);
+
     if (targetPage) {
         targetPage.classList.add('active');
-        
-        // Restore scroll position if exists, otherwise scroll to top
-        if (saveScroll && scrollPositions[pageId] !== undefined) {
-            setTimeout(() => {
-                window.scrollTo(0, scrollPositions[pageId]);
-            }, 0);
-        } else if (!saveScroll) {
-            window.scrollTo(0, 0);
-        }
+
+        // Əgər əvvəl scroll varsa ora qayıt
+        setTimeout(() => {
+            const savedScroll = scrollPositions[pageId] || 0;
+            window.scrollTo(0, savedScroll);
+        }, 10);
     }
 }
 
