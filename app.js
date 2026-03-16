@@ -110,7 +110,6 @@ window.addEventListener('appinstalled', () => {
 // ========================================
 
 const scrollPositions = {};
-let navigationHistory = [];
 
 function navigateTo(pageId, saveScroll = true) {
     // Save current scroll position
@@ -147,8 +146,12 @@ function navigateTo(pageId, saveScroll = true) {
 
 let selectedBuraxilisSinif = null;
 let buraxilisState = 'select'; // 'select', 'form'
+let buraxilisScrollPos = 0; // Scroll position for selection screen
 
 function selectBuraxilisSinif(sinif) {
+    // Save scroll position BEFORE changing state
+    buraxilisScrollPos = window.scrollY;
+    
     selectedBuraxilisSinif = sinif;
     buraxilisState = 'form';
     document.getElementById('buraxilisSelect').style.display = 'none';
@@ -164,7 +167,7 @@ function selectBuraxilisSinif(sinif) {
     document.getElementById('xarici_qapali').value = '';
     document.getElementById('xarici_aciq').value = '';
     
-    // Don't scroll to top
+    // Don't scroll - keep current position
 }
 
 function hesablaBuraxilis() {
@@ -270,6 +273,11 @@ function resetBuraxilis() {
     document.getElementById('buraxilisForm').style.display = 'none';
     document.getElementById('buraxilisResult').style.display = 'none';
     selectedBuraxilisSinif = null;
+    
+    // Restore scroll position to selection screen
+    setTimeout(() => {
+        window.scrollTo(0, buraxilisScrollPos);
+    }, 0);
 }
 
 // ========================================
@@ -280,6 +288,8 @@ let selectedBlokQrup = null;
 let selectedAltQrup = null;
 let blokFenler = [];
 let blokState = 'qrupSelect'; // 'qrupSelect', 'altQrupSelect', 'form'
+let blokQrupScrollPos = 0; // Scroll position for qrup selection
+let blokAltQrupScrollPos = 0; // Scroll position for alt qrup selection
 
 const blokData = {
     1: {
@@ -307,6 +317,9 @@ const blokData = {
 };
 
 function selectBlokQrup(qrup) {
+    // Save scroll position BEFORE changing state
+    blokQrupScrollPos = window.scrollY;
+    
     selectedBlokQrup = qrup;
     document.getElementById('blokQrupSelect').style.display = 'none';
 
@@ -327,6 +340,7 @@ function selectBlokQrup(qrup) {
         }
         
         document.getElementById('blokAltQrupSelect').style.display = 'block';
+        // Don't scroll - keep position
     } else {
         // No alt qrup, directly show form
         blokState = 'form';
@@ -336,11 +350,15 @@ function selectBlokQrup(qrup) {
 }
 
 function selectAltQrup(altQrup) {
+    // Save scroll position BEFORE changing state
+    blokAltQrupScrollPos = window.scrollY;
+    
     selectedAltQrup = altQrup;
     blokState = 'form';
     blokFenler = blokData[selectedBlokQrup].altQrup[altQrup].fenler;
     document.getElementById('blokAltQrupSelect').style.display = 'none';
     showBlokForm();
+    // Don't scroll - keep position
 }
 
 function showBlokForm() {
@@ -482,6 +500,11 @@ function resetBlok() {
             document.getElementById('blokAltQrupSelect').style.display = 'block';
             selectedAltQrup = null;
             blokFenler = [];
+            
+            // Restore scroll position to alt qrup selection screen
+            setTimeout(() => {
+                window.scrollTo(0, blokAltQrupScrollPos);
+            }, 0);
         } else {
             // No alt qrup, go back to qrup select
             blokState = 'qrupSelect';
@@ -489,6 +512,11 @@ function resetBlok() {
             document.getElementById('blokQrupSelect').style.display = 'block';
             selectedBlokQrup = null;
             blokFenler = [];
+            
+            // Restore scroll position to qrup selection screen
+            setTimeout(() => {
+                window.scrollTo(0, blokQrupScrollPos);
+            }, 0);
         }
     } else if (blokState === 'altQrupSelect') {
         // If in alt qrup select, go back to qrup select
@@ -496,6 +524,11 @@ function resetBlok() {
         document.getElementById('blokAltQrupSelect').style.display = 'none';
         document.getElementById('blokQrupSelect').style.display = 'block';
         selectedBlokQrup = null;
+        
+        // Restore scroll position to qrup selection screen
+        setTimeout(() => {
+            window.scrollTo(0, blokQrupScrollPos);
+        }, 0);
     }
 }
 

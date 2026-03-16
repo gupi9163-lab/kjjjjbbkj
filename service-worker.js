@@ -1,6 +1,6 @@
 // VERSION: Update this when you make changes to force cache refresh
 // IMPORTANT: Increment this version number whenever you update any files
-const CACHE_VERSION = 'v1.1.0';
+const CACHE_VERSION = 'v1.2.0';
 const CACHE_NAME = `akademik-hesablayici-${CACHE_VERSION}`;
 
 const ASSETS_TO_CACHE = [
@@ -10,8 +10,7 @@ const ASSETS_TO_CACHE = [
   '/app.js',
   '/manifest.json',
   '/icon-192.png',
-  '/icon-512.png',
-  '/abify-logo.png'
+  '/icon-512.png'
 ];
 
 // Install event - cache all assets
